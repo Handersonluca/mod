@@ -1,0 +1,26 @@
+{
+  "version": "Free Fire 1.132.1 ARM64",
+  "name": {
+    "getter": "0x6f27944",
+    "original_path_load": "0x6f2797c",
+    "field": "BDHGDLFDHAL",
+    "offset": "0x490",
+    "type": "System.String"
+  },
+  "health": {
+    "getter": "0x6f92d84",
+    "maxGetter": "0x6f0d170",
+    "provider": "GCommon.ReplicationEntity.m_PRIDataPool +0x70",
+    "keyCurrent": 0,
+    "keyMax": 1,
+    "managedGetter": "0x82e78bc",
+    "unsafeGetter": "0x82ea3f0",
+    "note": "Static original paths only; exact live types, field metadata and byte probes required. Runtime override semantics and on-device behavior untested."
+  },
+  "chest": {
+    "method": "Player.GetChestPos",
+    "original_path_load": "0x6f2a8dc",
+    "nodeOffset": "0x6b0",
+    "note": "Use its reflected TransformNode and Transform; no numerical head offset or remote call."
+  }
+}

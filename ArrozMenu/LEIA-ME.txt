@@ -1,0 +1,217 @@
+Arroz Menu — 3.1.7 experimental (base 3.1.6 recuperada)
+
+Mudanças desta versão
+- ESP: protocolo FRAME4 identifica cada registro por uma identidade do leitor, para que trocas na ordem da lista não misturem a suavização dos alvos.
+- Transição visual de 40 ms entre amostras válidas do mesmo identificador. Alvos novos, saltos grandes e protocolos antigos são desenhados diretamente. Não há extrapolação de movimento.
+- O prazo de expiração continua em 350 ms. Uma leitura inválida ou TRANSIENT não renova o horário da última posição válida. Quadros vazios válidos, desconexão e parada continuam removendo os marcadores.
+- O leitor distingue SnapshotChanged (leitura mudou em andamento) de um quadro vazio real. Se todas as raízes disponíveis falharam por atualização simultânea, não declara artificialmente que a cena ficou vazia.
+- Referências de cabeça e osso de mira substituídas são revalidadas e recuperadas na coleta, em vez de depender apenas da próxima atualização periódica do cache.
+- Linha ESP com contorno de contraste. Barra de vida funciona também sem Box. Diagnóstico do ESP pode ocupar duas linhas.
+- Mensagens de status atualizam apenas os rótulos, evitando recalcular todas as opções e cores do painel a cada diagnóstico.
+- HS/mira: renovação do comando em uma thread própria a cada 80 ms, independente do temporizador da interface. Desativação, parada e encerramento continuam interrompendo o controle.
+- Antes da escrita, câmera e osso selecionado são relidos; a posição recém-obtida precisa continuar na tela/FOV e respeitar o limite de idade da amostra. Isso evita calcular a mira com a posição guardada no começo de uma varredura longa.
+- Alterações reais de processo, classe, transform, mapa, controle desativado, escrita parcial ou confirmação divergente continuam interrompendo a operação. Não foram inventados offsets ou removidas as verificações da versão do jogo.
+
+Validação e limites
+- Java/DEX e executáveis ARM64 compilados; NDK r27c, API 30 e alinhamento nativo 16 KiB.
+- Assinatura e pacote conferidos contra o APK 3.1.6 disponível. Esta versão instala por cima dessa edição sem trocar o certificado.
+- Testes JVM: associação dos campos/IDs/vida/nome, compatibilidade FRAME2/3, rejeição de dados inválidos, transição visual com lista reordenada, expiração ao trocar amostras, limpeza, fila limitada e desarme.
+- EspSession real testado com adaptadores Android de teste: a renovação ARM continuou enquanto nenhuma tarefa de interface era executada, e o fechamento encerrou o executor.
+- Testes nativos em memória do próprio processo: leituras, transação do quaternion, limites, desligamento e falhas de confirmação. Um quadro emitido pelo novo C++ foi decodificado pelo Java para verificar o contrato entre os dois.
+- Sem aparelho Android ou Free Fire conectado. Não houve teste de desempenho, compatibilidade dos offsets atuais, aparência ou acertos em uma partida. Não há garantia de somente headshots. O resultado no seu aparelho ainda precisa ser conferido.
+
+Como testar
+1. Feche o flutuante antigo e instale o APK 3.1.7 por cima da 3.1.6, sem desinstalar.
+2. Valide sua chave e confira primeiro apenas ESP, Linha e Box. Depois ligue Nome, Vida e Esqueleto separadamente para observar o custo.
+3. Confira se o status mantém leituras e FPS, e se aparece erro de código divergente, referência de cabeça ou amostra antiga. Copie o diagnóstico se continuar piscando.
+4. Teste o controle de mira no treinamento e grave um vídeo curto com o status visível. Nenhum teste local comprova acertos reais no jogo.
+
+Compilar e preservar as atualizações
+- native/build-native.sh compila o módulo com ANDROID_NDK_HOME apontando para o NDK r27c.
+- build-local.sh aceita ANDROID_JAR, ANDROID_BUILD_TOOLS, EDDSA_JAR e ECJ_JAR (opcional se houver javac). Use SDK/Build Tools 35 e net.i2p.crypto:eddsa:0.3.0.
+- SIGNING_KEYSTORE aponta para a keystore. ARROZ_STORE_PASSWORD e ARROZ_KEY_PASSWORD são lidas do ambiente; ARROZ_KEY_ALIAS tem padrão androiddebugkey.
+- signing/test.keystore preserva a assinatura Android Debug usada pela edição 3.1.6. Alias androiddebugkey, senhas de teste android. Guarde esta cópia dos fontes para manter futuras atualizações compatíveis. É uma assinatura de desenvolvimento, não uma identidade de produção.
+
+Histórico anterior, preservado para referência:
+
+Arroz Menu — 3.1.6
+Vínculo de uma chave a um aparelho. O cliente envia somente um hash do identificador do Android, e revalida a versão do vínculo. O reset no painel libera o aparelho para o próximo login, preserva os dias e invalida sessões anteriores na próxima verificação. Os prazos editados no painel passam a ser atualizados durante a revalidação.
+
+Histórico anterior:
+Arroz Menu — 3.1.5
+Aceita chaves personalizadas escolhidas no painel, por exemplo lucas123, e mantém compatibilidade com chaves ARR antigas. O prazo continua sendo definido pelo administrador. Maiúsculas e minúsculas são equivalentes.
+
+Histórico anterior:
+Arroz Menu — 3.1.4
+Autenticação pela Central de Chaves própria. As chaves ARR são geradas no painel privado. O prazo começa na primeira ativação e o aplicativo revalida a sessão durante o uso. A comunicação usa HTTPS, respostas Ed25519 e nonce por consulta. O APK contém somente a chave pública de verificação.
+Painel: https://arroz-central-de-chaves.purposefullark.chatgpt.site
+Validação: https://arroz-validacao.purposefullark.chatgpt.site/api/v1/validar
+
+Histórico anterior:
+Arroz Menu — 3.1.3 (projeto fonte)
+- Entrega de quadros à interface limitada a uma tarefa pendente. Novos quadros substituem os que ainda não foram desenhados, evitando fila de posições antigas.
+- Desenho solicita atualização no próximo ciclo de tela. O temporizador periódico de redesenho foi removido; uma expiração única continua ocultando dados após 350 ms.
+- Fonte tipográfica das etiquetas reutilizada em vez de recriada para cada nome em cada desenho.
+- Quadros vazios e desconexões continuam limpando posições. Não mantém alvos antigos nem inventa coordenadas para esconder falhas de leitura.
+- O módulo nativo, frequência de coleta, offsets, permissões, autenticação e lógica de mira não foram alterados. Os fontes e o binário nativo existentes estão incluídos.
+- Uma causa adicional das piscadas está no leitor: quando o snapshot muda durante a coleta ele publica FRAME 0. Essa invalidação foi preservada. A revisão da interface não resolve essa perda de dados na origem.
+- Testes de fila feitos no computador; desempenho e desenho no aparelho ainda não medidos. Não inclui APK novo nesta entrega.
+- Não há ocultação de root, bypass ou garantia contra suspensão.
+
+Compilação: JDK 17, Android SDK 35, Gradle compatível com Android Gradle Plugin 8.7.3. Configure sdk.dir em local.properties e execute gradle :app:assembleDebug. O wrapper Gradle não está incluído; use uma instalação local do Gradle.
+JNI opcional: com o NDK r27c em ANDROID_NDK_HOME, execute bash native/build-native.sh antes de montar o APK para gerar libarroz_jni.so (ARM64).
+Bypass.applyPatch recebe endereço, bytes novos e bytes originais esperados. Atua somente em um mapeamento privado e legível do processo que carregou a biblioteca. Bypass.restorePatch usa o endereço para localizar o backup. Se a recuperação falhar, o registro fica disponível para nova tentativa. O chamador precisa manter a região mapeada e garantir que nenhuma outra thread a use durante a operação. Não há alvo configurado nem execução ao abrir o menu.
+Para atualizar uma instalação assinada anteriormente, use o mesmo certificado privado, que não integra este ZIP. A configuração KeyAuth segue no cliente; a licença pessoal e segredos privados não estão incluídos.
+
+Histórico anterior (as validações e nomes abaixo descrevem as edições correspondentes):
+
+Arroz Menu — 3.1.2
+- Nome visível do aplicativo, telas de entrada/inicial, flutuante e notificações atualizado para Arroz Menu.
+- Arquivo de instalação: Arroz-Menu-v3.1.2.apk. Instala por cima da edição anterior com o mesmo certificado.
+- Alteração de apresentação: módulo nativo e validação KeyAuth preservados. A identidade do pacote e a configuração de criptografia local permanecem compatíveis com a chave lembrada.
+- Componente nativo ativo continua na versão 3.1.1.
+- Verificações: compilação Java/DEX, rótulo no manifesto, assinatura e conteúdo do pacote.
+
+Histórico anterior:
+
+Atualização 3.1.1 — validações e encerramento da escrita
+- O caminho de escrita da mira evita regravar rotações equivalentes, incluindo quaternions com sinais opostos. A comparação usa tolerância pequena para ruído numérico; não altera a região de alvo nem a regra de disparo.
+- Rejeita rotações não finitas ou fora da faixa de normalização. Faz nova comparação do valor esperado depois das validações e imediatamente antes da tentativa de gravação.
+- Exige uma amostra coletada há no máximo 100 ms, verifica a identidade de início do processo para evitar reutilização de PID e reconfere a cadeia de partida/jogador/alvo antes da escrita.
+- Consulta a permissão atual da região: somente dados privados rw-p. Região executável, compartilhada, somente leitura, fora dos limites ou gravação cruzando página é rejeitada.
+- Mantém intervalo mínimo de 16.667 microssegundos entre escritas confirmadas. Isso é um teto de aproximadamente 60 Hz, não uma meta de aumentar a frequência.
+- Escrita parcial, falha de confirmação, divergência após gravação ou mudança de identidade/mapa pausam a escrita. O controle precisa receber ARM 0 antes de permitir nova tentativa. Na interface, desligue e ligue a mira para rearmar; o aviso Mira pausada permanece visível.
+- Não faz rollback cego após uma falha: o jogo pode já ter atualizado aquele dado. Leitura, comparação, gravação e confirmação continuam operações separadas, não uma transação atômica. Ainda existe concorrência com o jogo e possibilidade de escrita parcial; as proteções reduzem riscos sem eliminá-los.
+- STOP e EOF do canal encerram o leitor. Ao fechar o painel, o aplicativo tenta desarmar e encerrar pelo protocolo, concede até 300 ms para o processo direto e então força seu encerramento/fecha os canais. A expiração da permissão temporária de escrita continua em 250 ms.
+- O envio de comandos usa uma tarefa pendente que carrega o estado mais recente, evitando acumular milhares de atualizações antigas enquanto o leitor estiver ocupado.
+- Módulo ativo: native/native-v311.cpp, memory-write-guard.hpp e libmemory_v311.so. O APK não empacota o binário antigo. Interface 3.1.0, chave lembrada e validação KeyAuth foram preservadas.
+- Validações locais incluem: 10 mil atualizações idênticas sem gravação; mudança concorrente do valor esperado; falhas parciais e de confirmação simuladas; uma escrita real em memória do próprio processo de teste; permissões, PID/início de processo, STOP/EOF, fila coalescida e encerramento com canal bloqueado. Não é medição de FPS nem teste no Free Fire.
+- Compilação ARM64, assinatura e empacotamento verificados. Comportamento e desempenho no aparelho ainda precisam ser conferidos.
+
+Teste no aparelho
+1. Instale por cima da edição Lucas Menu Key e valide a chave normalmente.
+2. Abra o flutuante. Use as opções e observe se os dados se mantêm estáveis.
+3. Se aparecer Mira pausada, desligue a mira; reative apenas para uma nova tentativa. Uma pausa repetida indica que a leitura/escrita ainda precisa de análise no aparelho.
+4. Feche pelo X ou pela notificação para encerrar o leitor.
+
+Histórico anterior:
+
+Atualização 3.1.0 — interface simplificada
+- A tela após a validação contém apenas Abrir flutuante e Abrir jogo. Os testes e botões de diagnóstico foram retirados da interface, inclusive Copiar diagnóstico da tela de entrada.
+- Fundo com a arte original do Lucas Menu, cartões com cantos de 32dp, botões arredondados e novo tema roxo/azul/verde. O flutuante recebeu bordas de 24dp e cabeçalho em gradiente.
+- Abrir jogo inicia o pacote instalado com.dts.freefireth. Se ele não estiver instalado/visível, a tela informa isso; não abre uma página externa automaticamente.
+- O tamanho do painel continua configurável na aba Painel do próprio flutuante. Fechar pelo X ou pela notificação continua encerrando o serviço.
+- Cor da ESP agora é um controle deslizante contínuo, com espectro completo, transição até branco, amostra na bolinha e valor hexadecimal. A cor atual é preservada ao atualizar; só muda ao arrastar.
+- Lembrar minha chave é opcional e vem desmarcado. Após uma validação bem-sucedida, a chave é armazenada como ciphertext AES-256-GCM em dados privados; a chave de criptografia é gerada no Android Keystore.
+- Ao abrir novamente, o campo é preenchido e a opção fica marcada. Entrar continua exigindo a validação online normal do KeyAuth. Nenhuma autorização de acesso é salva nem concedida por esse preenchimento.
+- Desmarcar Lembrar minha chave remove o ciphertext salvo. Uma falha de restauração limpa o valor local e pede nova digitação; uma falha de gravação é informada sem bloquear um login que já foi validado.
+- Aplicativo segue sem backup de dados. O ciphertext e a chave de criptografia local não são incluídos nos fontes ou no APK distribuído.
+- Certificado, pacote, cliente KeyAuth e módulo nativo 3.0.0 preservados. Não altera o comportamento da mira ou do leitor de ESP.
+- Verificações locais: compilação Java/DEX, testes de criptografia/tamper, espectro de cores, assinatura e conteúdo do APK. Android Keystore, abertura do jogo e aparência final ainda precisam de teste no aparelho; a checagem criptográfica local usa o provedor Java do computador.
+
+Como usar
+1. Instale por cima da edição Lucas Menu Key.
+2. Na primeira entrada, digite sua chave, marque Lembrar minha chave se desejar e toque em Entrar. Uma chave de uma versão que não a salvava precisa ser digitada uma vez.
+3. Use os dois botões da tela inicial para abrir o flutuante e o Free Fire.
+4. No flutuante, acesse Visual e arraste Cor da ESP. As preferências existentes são mantidas.
+
+Histórico anterior:
+
+Atualização 3.0.0 — seleção de alvo e ESP
+- Mira: liga/desliga, Cabeça / Peito / Quadril. Cabeça usa a referência de cabeça já validada; Peito usa a referência de peito do caminho original de GetChestPos (+0x6b0); Quadril usa hips. Não são deslocamentos artificiais da cabeça.
+- O ponto de mira é lido e aplicado antes dos dados opcionais de nome/vida/esqueleto do ESP; um alvo já selecionado é revalidado primeiro. Isso reduz trabalho antes da atualização de mira, sem prazo de resposta ou taxa de acertos garantidos.
+- FOV: ajuste 0–360 e Mostrar FOV independente da seleção do alvo. O valor é uma escala de raio na tela, não graus de câmera. Ocultar o círculo preserva o filtro de seleção.
+- ESP Name substitui a etiqueta fixa Lucas pelo nome armazenado no campo lido pelo caminho original de Player.get_NickName. UTF-16 é validado, convertido para UTF-8 e transportado como hexadecimal para preservar nomes com espaços e Unicode.
+- ESP Vida desenha a vida atual / máxima em uma barra ao lado esquerdo da Box. Requer ESP Box e ESP Vida ligados. Dados ausentes ou inconsistentes deixam a barra oculta.
+- Vida segue o caminho original dos getters CurHP / MaxHP, m_PRIDataPool, chaves 0 e 1 e ReplicationDataPool / ReplicationDataPoolUnsafe. Exige nomes de tipos exatos, metadados de campos, regiões legíveis e seis novas amostras de código correspondentes. Nenhuma função remota de vida/nome é chamada.
+- Os caminhos originais podem diferir de substituições de runtime. Nome e vida continuam experimentais até teste visual no aparelho. Não há confirmação de que todos os modos/tipos de jogador expõem esses valores.
+- Esqueleto: contorno de contraste, traços arredondados e descarte de segmentos inconsistentes. Usa somente os nove ossos existentes e cabeça validados; não acrescenta cotovelos/joelhos estimados.
+- Opção e contador Radar 100 m removidos da interface; isso não impõe alcance de 100 metros ao ESP.
+- Leitor nativo atualizado para 3.0.0. Diagnóstico informa quantidade de nomes e vidas válidos. Protocolo FRAME3 associa nome, vida e juntas em cada registro; FRAME2 ainda é aceito pelo painel.
+- Autenticação e certificado de assinatura mantidos. O módulo novo é libmemory_v30.so; o antigo não é empacotado.
+- Validação local: compilação Java/ARM64, testes de protocolo e leitura de memória em fixtures do próprio processo. O teste real no Free Fire, a aparência no aparelho e os acertos de mira permanecem pendentes. A mira segue um ponto do esqueleto; isso não garante acerto na cabeça ou em outra região.
+
+Como testar no celular
+1. Instale a atualização por cima da edição Lucas Menu Key e valide sua chave.
+2. Abra o menu. Em Visual, ligue ESP, Box, Name e Vida. Esqueleto é opcional.
+3. Se nome/vida não aparecerem, copie o diagnóstico: os contadores nomes= e vidas= mostram quantos registros tiveram leitura validada. Dados ausentes não recebem nome ou vida fictícios.
+4. Em Mira, escolha a região, ajuste o FOV e ligue Ativar mira. Mostrar FOV só controla o círculo.
+5. O botão Fechar encerra o leitor e as sobreposições.
+
+Compilar o novo módulo nativo
+Defina ANDROID_NDK_HOME para o NDK r27c e execute native/build-native.sh. O script usa API 30, ARM64, PIE, C++ estático e páginas de 16 KiB. O Gradle empacota o binário já compilado de jniLibs.
+
+Histórico anterior (as referências a v2.7 abaixo descrevem versões passadas):
+
+Atualização 2.9.4 — opção ESP Distância
+- Visual > Distância mostra uma etiqueta aproximada junto ao marcador de cada alvo projetado.
+- Usa o valor de distância já recebido no protocolo do leitor: origem na câmera, não a origem do personagem. É uma estimativa visual exibida em m, sem medição independente da escala do mundo.
+- Opção desligada por padrão; funciona também sem referência de cabeça validada.
+- Respeita os mesmos filtros e descarte de dados antigos do ESP; labels são limitados às bordas da tela.
+- Backend nativo e autenticação permanecem iguais à 2.9.3. Não incorpora algoritmos novos de HS, silent aim, ghost ou ocultação de root.
+- Compilação e empacotamento verificados; teste visual no aparelho pendente.
+
+Atualização 2.9.3 — interface inspirada na análise do DPLoader
+- Tema carvão com destaque rosa, cabeçalho reduzido, checkboxes e FOV rosa.
+- Presets de painel: 240x300, 270x350 e 300x400dp, sujeitos ao espaço disponível.
+- Arte, identidade Lucas e ligação com as preferências existentes preservadas.
+- Implementação Java própria, adaptada a partir de padrões identificados; não incorpora a libloader.so do fornecedor.
+- Backend nativo byte a byte igual ao 2.9.2. Não adiciona silent aim/ghost.
+- KeyAuth e requisitos de rede preservados.
+- Validação: compilação, DEX, assinatura e empacotamento; visual ainda exige teste no aparelho.
+
+Atualização 2.9.2
+- Conexão: timeout 20s; leitura: timeout 30s.
+- Inicialização repete uma vez somente em timeout, com progresso na tela.
+- Não repete automaticamente login de licença nem recusas do servidor.
+- Diagnóstico distingue CONNECT_SEND, RESPONSE e BODY.
+- Testes simulam recuperação, limite de tentativas, rejeição e timeout durante licença.
+- Falha real de rede no aparelho ainda exige teste; não comprova validade da chave.
+
+Atualização 2.9.1
+- Diagnóstico por etapa e tipo de erro (DNS, TLS, timeout, JSON, assinatura, servidor).
+- Botão Copiar diagnóstico, sem chave ou ID de sessão.
+- Timeout de conexão/leitura de 15s e User-Agent KeyAuth.
+- Causa do erro da foto ainda pendente de diagnóstico no aparelho. Esta atualização não comprova que a conexão no aparelho foi resolvida.
+- Instala por cima da edição Lucas Menu Key 2.9, com o mesmo pacote e certificado.
+
+Lucas Menu Key — 2.9
+
+Configuração KeyAuth
+Aplicativo no painel: Menu
+Owner ID: 1uHdqY1oRQ
+Versão no KeyAuth: 1.0 (independente da versão 2.9 do APK)
+API cliente: https://keyauth.win/api/1.3/
+
+Teste no celular
+1. Instale Lucas-Menu-Key-v2.9.apk. É uma edição separada (com.rdzim.lucasmenu.keyauth), que pode coexistir com a anterior. Use apenas uma edição por vez para evitar flutuantes duplicados.
+2. No aplicativo Menu do KeyAuth, crie uma licença com uma assinatura ativa e a duração desejada.
+3. Com internet e data/hora automáticas, abra Lucas Menu Key e digite essa licença.
+4. Somente após a validação o painel fica acessível. Para trocar a licença, use Sair da chave.
+
+Foi testada a inicialização real do aplicativo no KeyAuth e a assinatura da resposta. Nenhuma licença real de usuário foi fornecida/consumida; o login completo e a interface ainda precisam ser testados no celular.
+
+Comportamento
+- Não salva a chave em texto nem mantém um booleano de acesso nas preferências.
+- Uma sessão só existe na memória deste processo. Reiniciar o processo exige a chave novamente.
+- Envia como HWID o SHA-256 do Android ID restrito ao aplicativo, pacote e Owner ID. O bloqueio por aparelho depende da configuração de HWID no KeyAuth. Reinstalação/reset de dados ou troca de assinatura pode exigir reset de HWID no painel.
+- Enquanto o flutuante está ativo, consulta a sessão a cada 45 segundos. Falha de conexão/recusa encerra o acesso; sem confirmação por 90 segundos também bloqueia. Não há modo offline.
+- Respeita a validade assinada pelo servidor usando relógio monotônico para o prazo local.
+- Verifica HTTPS normal, assinatura Ed25519, timestamp, Owner ID e limites de resposta. Não aceita resposta unsigned nem desativa TLS.
+- Segredo do aplicativo e Seller API Key não estão incluídos. A criação/venda de chaves continua no painel KeyAuth.
+- Inclui a correção de estado do leitor: desconexão e parada não ficam exibindo HS pronto.
+- O módulo nativo original é byte a byte o mesmo da edição 2.8. Nenhuma lógica de mira, ocultação ou antidetecção foi modificada.
+
+Compilação do projeto
+Requer JDK 17, Gradle compatível com Android Gradle Plugin 8.7.3 e Android SDK 35.
+Configure sdk.dir no local.properties e execute gradle :app:assembleDebug.
+A dependência net.i2p.crypto:eddsa:0.3.0 é usada para verificar assinaturas do KeyAuth. Guarde o certificado de assinatura separadamente e reutilize-o em futuras atualizações.
+
+Validação realizada
+- Compilação de todos os fontes Android e geração de DEX.
+- Testes locais: init uma vez, login, recusas, expiração, owner incorreto, limite de sessão, logout, assinatura, adulteração e timestamp.
+- Inicialização real Menu/1.0 com assinatura KeyAuth conferida.
+- Verificação da assinatura APK, integridade ZIP e alinhamento nativo.
+- Sem emulador/aparelho conectado; sem teste de licença válida de ponta a ponta.
+
+Isso é autenticação de acesso ao painel. Não altera as regras nem a detecção do Free Fire e não impede suspensões. Uma proteção somente no cliente também não garante resistência contra modificações do próprio APK.

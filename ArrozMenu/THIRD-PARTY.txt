@@ -1,0 +1,11 @@
+EdDSA-Java 0.3.0
+https://github.com/str4d/ed25519-java
+License: CC0 1.0 Universal (as declared by the Maven artifact).
+Library used solely for Ed25519 response signature verification.
+
+KeyAuth API references:
+https://docs.keyauth.cc/api/getting-started/initialization
+https://docs.keyauth.cc/api/getting-started/license/license-login
+https://github.com/KeyAuth/KeyAuth-Python-Example/blob/main/keyauth.py
+
+Existing artwork and native executable are retained from the user's Lucas Menu APK.
